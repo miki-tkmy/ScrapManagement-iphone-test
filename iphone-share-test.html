@@ -1,0 +1,1711 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>iPhone Safari PDF共有検証ページ | ScrapManagement</title>
+  <style>
+    :root {
+      --scrap-style-runtime-rev: "OPERATION-PDF-BULK-20261106-01";
+    }
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      background: #f3f4f6;
+      color: #111827;
+      font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", Meiryo, sans-serif;
+      margin: 0;
+      padding: 12px;
+      overflow-x: hidden;
+    }
+    .share-test-container {
+      width: 100%;
+      max-width: 560px;
+      margin: 0 auto;
+    }
+    .share-test-card {
+      background: #ffffff;
+      border-radius: 12px;
+      border: 1px solid #d1d5db;
+      padding: 14px;
+      margin-bottom: 14px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+      overflow-wrap: anywhere;
+    }
+    .share-test-badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 0.74rem;
+      font-weight: 700;
+      background: #eef2ff;
+      color: #1f1235;
+      margin-bottom: 6px;
+      max-width: 100%;
+    }
+    .form-input {
+      padding: 8px 10px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      background: #ffffff;
+      color: #111827;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      cursor: pointer;
+      transition: opacity 0.15s ease;
+    }
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .btn-primary {
+      background: #ff6e6c;
+      color: #ffffff;
+    }
+    .btn-secondary {
+      background: #5f506b;
+      color: #ffffff;
+    }
+    .share-step-btn {
+      width: 100%;
+      min-height: 48px;
+      font-size: 0.96rem;
+      font-weight: 700;
+      margin-top: 8px;
+      border-radius: 8px;
+    }
+    .diag-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 130px) minmax(0, 1fr);
+      gap: 6px 10px;
+      align-items: center;
+      font-size: 0.82rem;
+      padding: 10px;
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+    }
+    .status-pill {
+      display: inline-block;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 0.76rem;
+      word-break: break-all;
+      white-space: normal;
+      line-height: 1.35;
+    }
+    .pill-pass { background: #dcfce7; color: #166534; }
+    .pill-warn { background: #fef3c7; color: #92400e; }
+    .pill-human { background: #e0e7ff; color: #1e40af; }
+    .email-status-banner {
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 0.84rem;
+      line-height: 1.45;
+      border: 1px solid #d1d5db;
+      background: #f9fafb;
+      color: #1f2937;
+      white-space: pre-wrap;
+    }
+    .email-status-banner.status-warning {
+      background: #fffbeb;
+      border-color: #fde68a;
+      color: #92400e;
+    }
+    .email-status-banner.status-error {
+      background: #fef2f2;
+      border-color: #fecaca;
+      color: #991b1b;
+    }
+    .email-status-banner.status-info {
+      background: #eff6ff;
+      border-color: #bfdbfe;
+      color: #1e40af;
+    }
+    .checklist-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+      margin-top: 8px;
+    }
+    .checklist-table th, .checklist-table td {
+      border: 1px solid #e5e7eb;
+      padding: 8px;
+      text-align: left;
+    }
+    .checklist-table th {
+      background: #f3f4f6;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+  <div class="share-test-container">
+    <div class="share-test-card">
+      <span class="share-test-badge">Phase 1: iPhone Safari PDF共有検証 (個人情報なし・本番GAS非接続・外部通信ゼロ)</span>
+      <h1 style="font-size: 1.18rem; margin: 4px 0 8px 0;">スクラップ処分伝票 PDF添付・共有テスト</h1>
+      <p style="font-size: 0.84rem; color: #4b5563; margin: 0 0 10px 0;">
+        iOS Safariのユーザー操作制約（Transient User Activation）に対応するため、<strong>STEP 1（PDF準備）</strong>でダミー伝票の <code>File</code> オブジェクト（<code>application/pdf</code>）を事前生成し、<strong>STEP 2（PDFを共有）</strong>のタップから同期的に <code>navigator.share({ files: [pdfFile] })</code> を起動します。
+      </p>
+
+      <div class="diag-grid" id="env-diag-box">
+        <span>Release ID</span>
+        <strong id="test-release-id">OPERATION-PDF-BULK-20261106-01</strong>
+        <span>外部API/GAS通信</span>
+        <span class="status-pill pill-pass">完全無効 (0件)</span>
+        <span>navigator.share 対応</span>
+        <span id="diag-nav-share">判定中...</span>
+        <span>navigator.canShare({ files }) 対応</span>
+        <span id="diag-can-share-files">判定中...</span>
+        <span>準備済み PDF File</span>
+        <span id="diag-prepared-file">未準備</span>
+      </div>
+    </div>
+
+    <!-- STEP 1: PDF準備 -->
+    <div class="share-test-card">
+      <span class="share-test-badge">STEP 1：PDF準備</span>
+      <h2 style="font-size: 1.02rem; margin: 4px 0 8px 0;">1. ダミー伝票を選択してPDFを生成・保持する</h2>
+      <div style="margin-bottom: 8px;">
+        <label for="dummy-slip-select" style="display:block; font-size:0.84rem; font-weight:700; margin-bottom:4px;">テスト対象ダミー伝票（個人情報・実データなし）</label>
+        <select id="dummy-slip-select" class="form-input" style="width:100%; max-width:100%; min-width:0; min-height:42px; text-overflow:ellipsis;">
+          <option value="DUMMY_1P_SIGNED">パターンA：22行・1ページ・電子署名あり（SCRAP-TEST-0001）</option>
+          <option value="DUMMY_2P_SIGNED">パターンB：27行・2ページ・電子署名あり（SCRAP-TEST-0002）</option>
+          <option value="DUMMY_1P_UNSIGNED">パターンC：15行・1ページ・電子署名なし（SCRAP-TEST-0003）</option>
+        </select>
+      </div>
+      <button type="button" id="btn-step1-prepare" class="btn btn-primary share-step-btn" onclick="runStep1PreparePdf()">
+        STEP 1：PDFを生成・準備する
+      </button>
+      <div id="step1-status" style="margin-top:8px; font-size:0.85rem; color:#374151;"></div>
+    </div>
+
+    <!-- STEP 2: PDF共有 -->
+    <div class="share-test-card">
+      <span class="share-test-badge">STEP 2：PDF共有（ユーザー直接タップ起動）</span>
+      <h2 style="font-size: 1.02rem; margin: 4px 0 6px 0;">2. 準備完了したPDFをiOS共有シートで開く</h2>
+      <p style="font-size: 0.82rem; color: #4b5563; margin: 0 0 8px 0;">
+        ※STEP 1完了後にボタンが有効になります。タップすると非同期生成待ちを挟まず即座に <code>navigator.share({ files: [pdfFile], title, text })</code> を呼び出します。
+      </p>
+      <button type="button" id="btn-step2-share" class="btn btn-primary share-step-btn" disabled onclick="runStep2SharePdf()">
+        PDFを共有（STEP 1を先に実行してください）
+      </button>
+      <button type="button" id="btn-step2-download" class="btn btn-secondary share-step-btn" disabled onclick="runFallbackDownloadPdf()" style="margin-top:8px;">
+        PDFを保存 / プレビュー確認
+      </button>
+      <div id="email-compose-status" class="email-status-banner" style="display:none; margin-top:10px;"></div>
+    </div>
+
+    <!-- 検証結果の判定パネル（PDF添付の成否と件名・本文の引き継ぎを分離） -->
+    <div class="share-test-card">
+      <span class="share-test-badge">検証結果の判定（PDF添付と件名・本文引き継ぎを分離判定）</span>
+      <h2 style="font-size: 1.02rem; margin: 4px 0 6px 0;">iPhone実機 検証ステータス</h2>
+      <p style="font-size: 0.8rem; color: #92400e; background: #fffbeb; border: 1px solid #fde68a; padding: 8px; border-radius: 6px; margin: 0 0 8px 0;">
+        ⚠️ 共有シートが開いただけでメール送信成功とは判定しません。<br>
+        ※また、件名・本文（<code>title</code> / <code>text</code>）は共有先メールアプリ（Outlook等）の仕様により引き継がれない場合があるため、<strong>PDF添付の成否（主判定 1〜5）とは分けて参考記録</strong>します。
+      </p>
+      <table class="checklist-table">
+        <thead>
+          <tr>
+            <th>検証項目</th>
+            <th>判定区分</th>
+            <th>ステータス</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1. STEP 1でPDFを生成・準備できた</td>
+            <td><strong>主判定</strong></td>
+            <td><span id="stage-0-pdf-prepared" class="status-pill pill-human">未実行</span></td>
+          </tr>
+          <tr>
+            <td>2. Safariで共有シートを開けた</td>
+            <td><strong>主判定</strong></td>
+            <td><span id="stage-1-share-sheet" class="status-pill pill-human">HUMAN_TEST_REQUIRED</span></td>
+          </tr>
+          <tr>
+            <td>3. Outlookまたは標準メールアプリを選択できた</td>
+            <td><strong>主判定</strong></td>
+            <td><span id="stage-2-mail-app" class="status-pill pill-human">HUMAN_TEST_REQUIRED</span></td>
+          </tr>
+          <tr>
+            <td>4. メール作成画面にPDFが添付されている</td>
+            <td><strong>主判定（最優先）</strong></td>
+            <td><span id="stage-3-pdf-attached" class="status-pill pill-human">HUMAN_TEST_REQUIRED</span></td>
+          </tr>
+          <tr>
+            <td>5. 添付PDFを開いて内容（日本語・署名・改ページ）を確認できた</td>
+            <td><strong>主判定（最優先）</strong></td>
+            <td><span id="stage-4-pdf-opened" class="status-pill pill-human">HUMAN_TEST_REQUIRED</span></td>
+          </tr>
+          <tr>
+            <td>参考A. 件名・本文の引き継ぎ有無（アプリ依存のため合否外）</td>
+            <td>参考確認（別判定）</td>
+            <td><span id="stage-ref-subject-body" class="status-pill pill-human">HUMAN_TEST_REQUIRED</span></td>
+          </tr>
+          <tr>
+            <td>参考B. 実際にメール送信できた（任意確認）</td>
+            <td>任意確認</td>
+            <td><span id="stage-5-mail-sent" class="status-pill pill-human">HUMAN_TEST_REQUIRED</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+
+    // ============================================================================
+    // ScrapManagement PDF生成・共有エンジン (src/js/app.js と同一実装・本番GAS通信なし)
+    // ============================================================================
+    const SCRAP_APP_RUNTIME_REV = "OPERATION-PDF-BULK-20261106-01";
+    let workingBaseCode = "LW";
+    let workingBaseName = "Lab.West（テスト拠点）";
+    let resolvedBaseCode = "LW";
+    let resolvedBaseName = "Lab.West（テスト拠点）";
+    let resolvedEmployeeName = "テスト担当者（ダミー）";
+    let currentEmailComposeSlip = null;
+    let currentGeneratedPdfPackage = null;
+    let lastDownloadedPdfInfo = null;
+
+    function isSlipEmailEnabledForBase(baseCode) {
+      return String(baseCode || "LW").trim().toUpperCase() === "LW";
+    }
+
+    async function ensureSlipSignatureForOutput(s) {
+      if (!s) return { success: false, error: "MISSING_SLIP" };
+      if (s.status === "DELETED") return { success: false, error: "SLIP_DELETED" };
+      const isDigital = (s.signatureStatus === "DIGITAL" || s.signStatus === "DIGITAL");
+      if (!isDigital) {
+        return { success: true, hasDigitalSignature: false, signatureData: null };
+      }
+      const existingSig = s.vendorSignatureImage || s.signatureData || null;
+      if (existingSig) {
+        s.vendorSignatureImage = existingSig;
+        return { success: true, hasDigitalSignature: true, signatureData: existingSig };
+      }
+      return { success: false, error: "SIGNATURE_NOT_PROVIDED_IN_DUMMY" };
+    }
+
+function getPrintQuantityDisplay(item) {
+  if (!item) return "";
+  if (item.quantityType === "SET") {
+    return "一式";
+  }
+  if (
+    item.quantityType === "NUMBER" &&
+    typeof item.quantityValue === "number"
+  ) {
+    return String(item.quantityValue);
+  }
+  return item.quantityInput || "";
+}
+
+function getPdfFilenameForSlip(slipNo) {
+  const cleanSlipNo = String(slipNo || "SCRAP-0000").trim().replace(/[\\/:*?"<>|]/g, "_");
+  return `スクラップ処分伝票_${cleanSlipNo}.pdf`;
+}
+
+function buildDefaultEmailSubject(slipNo) {
+  const cleanSlipNo = String(slipNo || "").trim();
+  return `【スクラップ処分伝票】${cleanSlipNo}`;
+}
+
+function buildDefaultEmailBody(slipRecord) {
+  const s = slipRecord || {};
+  const slipNo = String(s.slipNo || s.slipId || "").trim();
+  const rawDate = (typeof getHistoryBusinessDate === "function" ? getHistoryBusinessDate(s) : "") || s.date || s.createdAt || "";
+  const canonical = (typeof toCanonicalBusinessDate === "function" ? toCanonicalBusinessDate(rawDate) : rawDate) || "";
+  const disposalDate = canonical ? canonical.replace(/-/g, "/") : (rawDate || "");
+  const baseLabel = String(s.baseName || s.baseCode || "").trim();
+  const vendorName = String(s.vendorName || "").trim();
+
+  return [
+    "お疲れさまです。",
+    "",
+    "スクラップ処分伝票を送付します。",
+    "添付PDFをご確認ください。",
+    "",
+    `伝票番号：${slipNo}`,
+    `処分日：${disposalDate}`,
+    `Base：${baseLabel}`,
+    `引取業者：${vendorName}`,
+    "",
+    "よろしくお願いします。"
+  ].join("\n");
+}
+
+function collectUnifiedSlipItemsForOutput(s) {
+  if (!s) return [];
+  const allItems = [];
+  (s.codeItems || []).forEach(it => {
+    const codePart = it.itemCode ? ` (${it.itemCode})` : "";
+    allItems.push({
+      category: "資材",
+      name: `${it.itemName || ""}${codePart}`,
+      quantity: (typeof getPrintQuantityDisplay === "function") ? getPrintQuantityDisplay(it) : (it.quantityInput || "")
+    });
+  });
+  (s.fixedItems || []).forEach(fi => {
+    allItems.push({
+      category: "定型",
+      name: fi.itemName || "",
+      quantity: (typeof getPrintQuantityDisplay === "function") ? getPrintQuantityDisplay(fi) : (fi.quantityInput || "")
+    });
+  });
+  (s.otherItems || []).forEach(oi => {
+    allItems.push({
+      category: "その他",
+      name: oi.itemName || "",
+      quantity: oi.quantityInput || ""
+    });
+  });
+  return allItems;
+}
+
+function encodeUtf16BeHexForPdf(text) {
+  const str = String(text === null || text === undefined ? "" : text);
+  let hex = "FEFF";
+  for (let i = 0; i < str.length; i++) {
+    const code = str.charCodeAt(i);
+    hex += code.toString(16).toUpperCase().padStart(4, "0");
+  }
+  return `<${hex}>`;
+}
+
+function escapePdfLiteralString(text) {
+  const str = String(text === null || text === undefined ? "" : text);
+  return str
+    .replace(/\\/g, "\\\\")
+    .replace(/\(/g, "\\(")
+    .replace(/\)/g, "\\)")
+    .replace(/\r/g, "\\r")
+    .replace(/\n/g, "\\n");
+}
+
+function uint8ArrayToBase64(bytes) {
+  if (typeof Buffer !== "undefined") {
+    return Buffer.from(bytes).toString("base64");
+  }
+  let binary = "";
+  const len = bytes.byteLength;
+  for (let i = 0; i < len; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  if (typeof btoa === "function") {
+    return btoa(binary);
+  }
+  return "";
+}
+
+function base64ToUint8Array(base64Str) {
+  const clean = String(base64Str || "").replace(/^data:[^;]+;base64,/, "").trim();
+  if (!clean) return new Uint8Array(0);
+  if (typeof Buffer !== "undefined") {
+    return new Uint8Array(Buffer.from(clean, "base64"));
+  }
+  if (typeof atob === "function") {
+    const bin = atob(clean);
+    const out = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) {
+      out[i] = bin.charCodeAt(i);
+    }
+    return out;
+  }
+  return new Uint8Array(0);
+}
+
+function loadImageForCanvas(src) {
+  return new Promise((resolve) => {
+    if (!src || typeof Image === "undefined") {
+      resolve(null);
+      return;
+    }
+    try {
+      const img = new Image();
+      let settled = false;
+      const finish = (result) => {
+        if (settled) return;
+        settled = true;
+        resolve(result);
+      };
+      img.onload = () => finish(img);
+      img.onerror = () => finish(null);
+      img.src = src;
+      if (img.complete && img.naturalWidth > 0) {
+        finish(img);
+        return;
+      }
+      setTimeout(() => finish(img.complete && img.naturalWidth > 0 ? img : null), 1500);
+    } catch (e) {
+      resolve(null);
+    }
+  });
+}
+
+function wrapTextToLinesForCanvas(ctx, text, maxWidth, maxLines = 2) {
+  const str = String(text === null || text === undefined ? "" : text);
+  if (!str) return [""];
+  if (ctx.measureText(str).width <= maxWidth) {
+    return [str];
+  }
+  // 末尾の資材コード「 (CODE)」が途中で改行されるのを防ぐため、手前で分割可能なら優先分割
+  if (maxLines >= 2) {
+    const codeMatch = str.match(/^(.*)\s+(\([A-Za-z0-9_-]+\))$/);
+    if (codeMatch && ctx.measureText(codeMatch[1]).width <= maxWidth && ctx.measureText(codeMatch[2]).width <= maxWidth) {
+      return [codeMatch[1], codeMatch[2]];
+    }
+  }
+  const lines = [];
+  let current = "";
+  for (let i = 0; i < str.length; i++) {
+    const ch = str[i];
+    const next = current + ch;
+    if (ctx.measureText(next).width > maxWidth && current.length > 0) {
+      if (lines.length === maxLines - 1) {
+        // 最終行: 残り文字を収まる限り詰め、末尾を「…」に丸める
+        let rest = current + str.slice(i);
+        while (rest.length > 1 && ctx.measureText(rest + "…").width > maxWidth) {
+          rest = rest.slice(0, -1);
+        }
+        lines.push(rest + "…");
+        return lines;
+      }
+      // 直近に空白「 (」があればそこで改行する
+      const lastSpaceIdx = current.lastIndexOf(" (");
+      if (lastSpaceIdx > Math.floor(current.length * 0.5)) {
+        lines.push(current.slice(0, lastSpaceIdx));
+        current = current.slice(lastSpaceIdx + 1) + ch;
+      } else {
+        lines.push(current);
+        current = ch;
+      }
+    } else {
+      current = next;
+    }
+  }
+  if (current) lines.push(current);
+  return lines;
+}
+
+async function renderSlipPagesViaCanvas(slipMeta, pagesData, sigMeta, sharedCanvas = null) {
+  if (typeof document === "undefined" || typeof document.createElement !== "function") {
+    return false;
+  }
+  const canvas = sharedCanvas || document.createElement("canvas");
+  if (!canvas || typeof canvas.getContext !== "function") {
+    return false;
+  }
+  const ctx = canvas.getContext("2d");
+  if (
+    !ctx ||
+    typeof ctx.fillRect !== "function" ||
+    typeof ctx.fillText !== "function" ||
+    typeof ctx.measureText !== "function" ||
+    typeof canvas.toDataURL !== "function"
+  ) {
+    return false;
+  }
+
+  // A4縦 高解像度キャンバス (210mm x 297mm @ ~150dpi = 1240 x 1754 px)
+  const W = 1240;
+  const H = 1754;
+  if (canvas.width !== W) canvas.width = W;
+  if (canvas.height !== H) canvas.height = H;
+
+  const fontFamily = '"Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", "MS PGothic", sans-serif';
+  const totalPages = pagesData.length;
+
+  let sigImg = null;
+  if (sigMeta && sigMeta.hasDigitalSignature && sigMeta.signatureData) {
+    sigImg = await loadImageForCanvas(sigMeta.signatureData);
+  }
+
+  const marginX = 58;
+  const contentW = W - marginX * 2; // 1124px
+
+  for (let pIdx = 0; pIdx < totalPages; pIdx++) {
+    const pageInfo = pagesData[pIdx];
+    const pNum = pIdx + 1;
+    const isLastPage = (pNum === totalPages);
+    const titleText = (totalPages > 1 && pNum > 1)
+      ? "スクラップ引取受渡証明書（続き）"
+      : "スクラップ引取受渡証明書";
+
+    // 背景白塗り
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, W, H);
+    ctx.textBaseline = "middle";
+
+    // 1. ヘッダー領域 (print.css .slip-header-grid 準拠)
+    const headerTopY = 48;
+    const headerBottomY = 146;
+
+    ctx.fillStyle = "#000000";
+    ctx.textAlign = "left";
+    ctx.font = `bold 30px ${fontFamily}`;
+    ctx.fillText(titleText, marginX, headerTopY + 26);
+
+    ctx.font = `500 19px ${fontFamily}`;
+    ctx.fillText("株式会社タカミヤ", marginX, headerTopY + 66);
+
+    // 右上 伝票番号ボックス (.slip-meta-box)
+    const metaBoxW = 330;
+    const metaBoxH = 84;
+    const metaBoxX = marginX + contentW - metaBoxW;
+    const metaBoxY = headerTopY + 2;
+    ctx.strokeStyle = "#000000";
+    ctx.lineWidth = 1.6;
+    ctx.strokeRect(metaBoxX, metaBoxY, metaBoxW, metaBoxH);
+
+    ctx.textAlign = "right";
+    ctx.fillStyle = "#333333";
+    ctx.font = `500 14px ${fontFamily}`;
+    ctx.fillText("伝票番号", metaBoxX + metaBoxW - 14, metaBoxY + 20);
+
+    ctx.fillStyle = "#000000";
+    ctx.font = `bold 22px ${fontFamily}`;
+    ctx.fillText(String(slipMeta.slipNo || ""), metaBoxX + metaBoxW - 14, metaBoxY + 48);
+
+    if (totalPages > 1) {
+      ctx.fillStyle = "#222222";
+      ctx.font = `500 14px ${fontFamily}`;
+      ctx.fillText(`${pNum} / ${totalPages}`, metaBoxX + metaBoxW - 14, metaBoxY + 72);
+    }
+
+    // ヘッダー下罫線 (2px solid #000)
+    ctx.strokeStyle = "#000000";
+    ctx.lineWidth = 3.0;
+    ctx.beginPath();
+    ctx.moveTo(marginX, headerBottomY);
+    ctx.lineTo(marginX + contentW, headerBottomY);
+    ctx.stroke();
+
+    // 2. 2×2 田の字基本情報テーブル (.slip-info-grid-table)
+    const infoTopY = 160;
+    const infoRowH = 60;
+    const infoH = infoRowH * 2;
+    const halfW = Math.floor(contentW / 2);
+
+    ctx.strokeStyle = "#000000";
+    ctx.lineWidth = 1.6;
+    ctx.strokeRect(marginX, infoTopY, contentW, infoH);
+    ctx.beginPath();
+    ctx.moveTo(marginX, infoTopY + infoRowH);
+    ctx.lineTo(marginX + contentW, infoTopY + infoRowH);
+    ctx.moveTo(marginX + halfW, infoTopY);
+    ctx.lineTo(marginX + halfW, infoTopY + infoH);
+    ctx.stroke();
+
+    const drawInfoCell = (cellX, cellY, cellW, label, val) => {
+      ctx.textAlign = "left";
+      ctx.fillStyle = "#444444";
+      ctx.font = `bold 13px ${fontFamily}`;
+      ctx.fillText(label, cellX + 14, cellY + 18);
+
+      ctx.fillStyle = "#000000";
+      ctx.font = `bold 18px ${fontFamily}`;
+      const lines = wrapTextToLinesForCanvas(ctx, String(val || ""), cellW - 28, 1);
+      ctx.fillText(lines[0], cellX + 14, cellY + 42);
+    };
+
+    drawInfoCell(marginX, infoTopY, halfW, "発行日時", slipMeta.formattedDate);
+    drawInfoCell(marginX + halfW, infoTopY, contentW - halfW, "拠点名", slipMeta.baseName);
+    drawInfoCell(marginX, infoTopY + infoRowH, halfW, "株式会社タカミヤ担当者", slipMeta.staffName);
+    drawInfoCell(marginX + halfW, infoTopY + infoRowH, contentW - halfW, "スクラップ引取業者", slipMeta.vendorName);
+
+    // 3. 明細テーブル (.slip-items-table: 8% / 14% / 58% / 20%)
+    const tableTopY = 294;
+    const headerRowH = 40;
+    const itemRowH = 41;
+    const colNoW = Math.round(contentW * 0.08);      // 90px
+    const colCatW = Math.round(contentW * 0.14);     // 157px
+    const colNameW = Math.round(contentW * 0.58);    // 652px
+    const colQtyW = contentW - colNoW - colCatW - colNameW; // 225px
+
+    const xNo = marginX;
+    const xCat = xNo + colNoW;
+    const xName = xCat + colCatW;
+    const xQty = xName + colNameW;
+
+    // テーブルヘッダー背景 (#f0f0f0)
+    ctx.fillStyle = "#f0f0f0";
+    ctx.fillRect(marginX, tableTopY, contentW, headerRowH);
+    ctx.strokeStyle = "#000000";
+    ctx.lineWidth = 1.6;
+    ctx.strokeRect(marginX, tableTopY, contentW, headerRowH);
+
+    // ヘッダー縦罫線
+    ctx.beginPath();
+    ctx.moveTo(xCat, tableTopY);
+    ctx.lineTo(xCat, tableTopY + headerRowH);
+    ctx.moveTo(xName, tableTopY);
+    ctx.lineTo(xName, tableTopY + headerRowH);
+    ctx.moveTo(xQty, tableTopY);
+    ctx.lineTo(xQty, tableTopY + headerRowH);
+    ctx.stroke();
+
+    // ヘッダー文字 (中央揃え)
+    ctx.fillStyle = "#000000";
+    ctx.font = `bold 16px ${fontFamily}`;
+    ctx.textAlign = "center";
+    const headerMidY = tableTopY + headerRowH / 2;
+    ctx.fillText("No.", xNo + colNoW / 2, headerMidY);
+    ctx.fillText("区分", xCat + colCatW / 2, headerMidY);
+    ctx.fillText("品名 / 規格", xName + colNameW / 2, headerMidY);
+    ctx.fillText("数量", xQty + colQtyW / 2, headerMidY);
+
+    // 明細行 (最大25行)
+    const items = pageInfo.items || [];
+    if (items.length === 0) {
+      const rY = tableTopY + headerRowH;
+      ctx.strokeStyle = "#000000";
+      ctx.lineWidth = 1.4;
+      ctx.strokeRect(marginX, rY, contentW, itemRowH);
+      ctx.fillStyle = "#333333";
+      ctx.font = `500 16px ${fontFamily}`;
+      ctx.textAlign = "center";
+      ctx.fillText("明細品目なし", marginX + contentW / 2, rY + itemRowH / 2);
+    } else {
+      for (let r = 0; r < items.length; r++) {
+        const it = items[r];
+        const rY = tableTopY + headerRowH + r * itemRowH;
+        const rMidY = rY + itemRowH / 2;
+
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 1.3;
+        ctx.strokeRect(marginX, rY, contentW, itemRowH);
+        ctx.beginPath();
+        ctx.moveTo(xCat, rY);
+        ctx.lineTo(xCat, rY + itemRowH);
+        ctx.moveTo(xName, rY);
+        ctx.lineTo(xName, rY + itemRowH);
+        ctx.moveTo(xQty, rY);
+        ctx.lineTo(xQty, rY + itemRowH);
+        ctx.stroke();
+
+        ctx.fillStyle = "#000000";
+        // No.
+        ctx.font = `500 16px ${fontFamily}`;
+        ctx.textAlign = "center";
+        ctx.fillText(String(it.lineNo), xNo + colNoW / 2, rMidY);
+
+        // 区分
+        ctx.fillText(String(it.category || ""), xCat + colCatW / 2, rMidY);
+
+        // 品名 / 規格 (長文の場合は自動2行折り返しで欠け・重なりゼロ)
+        ctx.textAlign = "left";
+        const nameStr = String(it.name || "");
+        const nameMaxW = colNameW - 20;
+        ctx.font = `500 16px ${fontFamily}`;
+        if (ctx.measureText(nameStr).width <= nameMaxW) {
+          ctx.fillText(nameStr, xName + 10, rMidY);
+        } else {
+          ctx.font = `500 13.5px ${fontFamily}`;
+          const wrapped = wrapTextToLinesForCanvas(ctx, nameStr, nameMaxW, 2);
+          if (wrapped.length === 1) {
+            ctx.fillText(wrapped[0], xName + 10, rMidY);
+          } else {
+            ctx.fillText(wrapped[0], xName + 10, rY + 13);
+            ctx.fillText(wrapped[1], xName + 10, rY + 30);
+          }
+        }
+
+        // 数量 (右揃え・長文時は自動フォント縮小)
+        ctx.textAlign = "right";
+        const qtyStr = String(it.quantity || "");
+        const qtyMaxW = colQtyW - 20;
+        let qtyFontPx = 16;
+        ctx.font = `500 ${qtyFontPx}px ${fontFamily}`;
+        while (qtyFontPx > 11 && ctx.measureText(qtyStr).width > qtyMaxW) {
+          qtyFontPx -= 1;
+          ctx.font = `500 ${qtyFontPx}px ${fontFamily}`;
+        }
+        ctx.fillText(qtyStr, xQty + colQtyW - 10, rMidY);
+      }
+    }
+
+    // 4. 最終ページのみ: 【業者様受領署名】欄 (.slip-signature-box)
+    if (isLastPage) {
+      const sigBoxW = 480;
+      const sigBoxH = 265;
+      const sigBoxX = marginX + contentW - sigBoxW;
+      const sigBoxY = H - 52 - sigBoxH; // y=1437..1702 (25行テーブル下端 1359px から 78px の余白)
+
+      ctx.strokeStyle = "#000000";
+      ctx.lineWidth = 1.6;
+      ctx.strokeRect(sigBoxX, sigBoxY, sigBoxW, sigBoxH);
+
+      ctx.fillStyle = "#000000";
+      ctx.textAlign = "left";
+      ctx.font = `bold 16px ${fontFamily}`;
+      ctx.fillText("【業者様受領署名】", sigBoxX + 16, sigBoxY + 24);
+
+      // 署名画像描画領域
+      if (sigImg && sigMeta && sigMeta.hasDigitalSignature) {
+        const padX = 24;
+        const areaX = sigBoxX + padX;
+        const areaY = sigBoxY + 42;
+        const areaW = sigBoxW - padX * 2;
+        const areaH = sigBoxH - 78;
+        const imgW = sigImg.naturalWidth || sigImg.width || areaW;
+        const imgH = sigImg.naturalHeight || sigImg.height || areaH;
+        const scale = Math.min(areaW / imgW, areaH / imgH);
+        const drawW = imgW * scale;
+        const drawH = imgH * scale;
+        const drawX = areaX + (areaW - drawW) / 2;
+        const drawY = areaY + (areaH - drawH) / 2;
+        ctx.drawImage(sigImg, drawX, drawY, drawW, drawH);
+      }
+
+      ctx.fillStyle = "#555555";
+      ctx.textAlign = "right";
+      ctx.font = `500 13px ${fontFamily}`;
+      ctx.fillText("上記資材を受領いたしました", sigBoxX + sigBoxW - 16, sigBoxY + sigBoxH - 18);
+    }
+
+    const jpegDataUrl = canvas.toDataURL("image/jpeg", 0.92);
+    if (typeof jpegDataUrl !== "string" || !jpegDataUrl.startsWith("data:image/jpeg;base64,") || jpegDataUrl.length < 200) {
+      sigImg = null;
+      return false;
+    }
+    const jpegBytes = base64ToUint8Array(jpegDataUrl);
+    if (!jpegBytes || jpegBytes.byteLength < 100) {
+      sigImg = null;
+      return false;
+    }
+    pageInfo.canvasImage = {
+      width: W,
+      height: H,
+      jpegBytes
+    };
+  }
+
+  // Phase 6: ページ描画完了後に一時画像オブジェクトの参照を解放
+  if (sigImg) {
+    try { sigImg.onload = null; sigImg.onerror = null; } catch (e) {}
+    sigImg = null;
+  }
+  if (!sharedCanvas) {
+    try { canvas.width = 0; canvas.height = 0; } catch (e) {}
+  }
+
+  return true;
+}
+
+// Phase 5: 1件または複数伝票を1つの有効なPDF 1.4ドキュメントとして構築する
+// 各伝票は独立した帳票ページ群として出力され、異なる伝票の明細が同じページに混ざることはない。
+function buildCombinedMultiSlipA4PdfBytes(slipEntries, options = {}) {
+  // A4 Portrait (595.28pt x 841.89pt = 210mm x 297mm)
+  const PAGE_W = 595.28;
+  const PAGE_H = 841.89;
+  const entries = Array.isArray(slipEntries) ? slipEntries : [];
+  const releaseCanvasAfterEmbed = Boolean(options && options.releaseCanvasAfterEmbed);
+
+  const objects = [];
+  const addObject = (bodyStr) => {
+    const id = objects.length + 1;
+    objects.push({ id, body: bodyStr });
+    return id;
+  };
+  const addBinaryStreamObject = (dictEntriesStr, binaryBytes) => {
+    const id = objects.length + 1;
+    objects.push({
+      id,
+      dictStr: `<< ${dictEntriesStr} /Length ${binaryBytes.byteLength} >>`,
+      streamBytes: binaryBytes
+    });
+    return id;
+  };
+
+  // 1: Catalog, 2: Pages (placeholder), 3: CIDFont, 4: Type0 Font (UniJIS-UTF16-H), 5: Font F2 (Helvetica)
+  const catalogId = addObject("");
+  const pagesId = addObject("");
+  const cidFontId = addObject(
+    "<< /Type /Font /Subtype /CIDFontType0 /BaseFont /KozMinPro-Regular-Acro " +
+    "/CIDSystemInfo << /Registry (Adobe) /Ordering (Japan1) /Supplement 6 >> " +
+    "/DW 1000 >>"
+  );
+  const fontJaId = addObject(
+    `<< /Type /Font /Subtype /Type0 /BaseFont /KozMinPro-Regular-Acro /Encoding /UniJIS-UTF16-H /DescendantFonts [${cidFontId} 0 R] >> % /Identity-H CJK Type0`
+  );
+  const fontAsciiId = addObject(
+    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>"
+  );
+
+  const pageObjectIds = [];
+
+  for (let sIdx = 0; sIdx < entries.length; sIdx++) {
+    const entry = entries[sIdx];
+    const slipMeta = entry.slipMeta || {};
+    const pagesData = Array.isArray(entry.pagesData) ? entry.pagesData : [];
+    const sigMeta = entry.sigMeta || {};
+    const totalPages = pagesData.length;
+
+    // 伝票ごとの電子署名画像メタデータオブジェクト (その伝票の最終ページの受領署名欄へ反映)
+    let sigXObjectId = null;
+    if (sigMeta && sigMeta.hasDigitalSignature && sigMeta.signatureData) {
+      const rawSigStr = String(sigMeta.signatureData);
+      const sigDigestPreview = rawSigStr.slice(0, 96);
+      const pixelHex = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF" +
+        "FFFF1F12351F12351F12351F1235FFFF" +
+        "FF1F1235FFFFFFFFFFFFFFFF1F1235FF" +
+        "FF1F1235FF1F12351F1235FF1F1235FF" +
+        "FF1F1235FFFFFFFFFFFFFFFF1F1235FF" +
+        "FFFF1F12351F12351F12351F1235FFFF" +
+        "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF" +
+        "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF";
+      sigXObjectId = addObject(
+        `<< /Type /XObject /Subtype /Image /Width 16 /Height 8 /ColorSpace /DeviceRGB /BitsPerComponent 8 ` +
+        `/Filter /ASCIIHexDecode /ScrapSignatureStatus (DIGITAL) /ScrapSignatureUri (${escapePdfLiteralString(sigDigestPreview)}) ` +
+        `/Length ${pixelHex.length + 1} >>\nstream\n${pixelHex}>\nendstream`
+      );
+    }
+
+    for (let pIdx = 0; pIdx < totalPages; pIdx++) {
+      const pageInfo = pagesData[pIdx];
+      const pNum = pIdx + 1;
+      const isLastPage = (pNum === totalPages);
+      const titleText = (totalPages > 1 && pNum > 1)
+        ? "スクラップ引取受渡証明書（続き）"
+        : "スクラップ引取受渡証明書";
+      const pageNumLabel = totalPages > 1 ? `${pNum} / ${totalPages}` : "1 / 1";
+
+      let pageCanvasImgObjId = null;
+      if (pageInfo.canvasImage && pageInfo.canvasImage.jpegBytes && pageInfo.canvasImage.jpegBytes.byteLength > 0) {
+        pageCanvasImgObjId = addBinaryStreamObject(
+          `/Type /XObject /Subtype /Image /Width ${pageInfo.canvasImage.width} /Height ${pageInfo.canvasImage.height} ` +
+          `/ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode`,
+          pageInfo.canvasImage.jpegBytes
+        );
+        if (releaseCanvasAfterEmbed) {
+          pageInfo.canvasImage = null;
+        }
+      }
+
+      const hasCanvasLayer = (pageCanvasImgObjId !== null);
+      const textRenderMode = hasCanvasLayer ? "3 Tr" : "0 Tr";
+
+      const lines = [];
+      lines.push("q");
+
+      if (hasCanvasLayer) {
+        lines.push(`q ${PAGE_W} 0 0 ${PAGE_H} 0 0 cm /ImPage Do Q`);
+      } else {
+        // ベクター罫線フォールバック (Canvas非対応環境用)
+        lines.push("0 0 0 RG 1.2 w");
+        lines.push("28 772 539 0 re S");
+        lines.push("0.8 w 415 776 152 40 re S");
+        lines.push("0.8 w 28 708 539 56 re S");
+        lines.push("28 736 539 0 re S");
+        lines.push("297.5 708 0 56 re S");
+      }
+
+      // テキストレイヤー (絶対座標 1 0 0 1 x y Tm を使用し、Canvas存在時は 3 Tr で透明検索可能テキストとして埋め込む)
+      lines.push("BT");
+      lines.push(textRenderMode);
+      lines.push(`/F1 14 Tf 1 0 0 1 30 798 Tm ${encodeUtf16BeHexForPdf(titleText)} Tj`);
+      lines.push(`/F1 9 Tf 1 0 0 1 30 780 Tm ${encodeUtf16BeHexForPdf("株式会社タカミヤ")} Tj`);
+      lines.push(`/F1 7.5 Tf 1 0 0 1 422 804 Tm ${encodeUtf16BeHexForPdf("伝票番号")} Tj`);
+      lines.push(`/F2 10 Tf 1 0 0 1 422 790 Tm (${escapePdfLiteralString(slipMeta.slipNo)}) Tj`);
+      if (totalPages > 1) {
+        lines.push(`/F2 8 Tf 1 0 0 1 520 780 Tm (${escapePdfLiteralString(pageNumLabel)}) Tj`);
+      }
+
+      lines.push(`/F1 7 Tf 1 0 0 1 34 753 Tm ${encodeUtf16BeHexForPdf("発行日時")} Tj`);
+      lines.push(`/F1 9 Tf 1 0 0 1 34 741 Tm ${encodeUtf16BeHexForPdf(slipMeta.formattedDate)} Tj`);
+      lines.push(`/F1 7 Tf 1 0 0 1 304 753 Tm ${encodeUtf16BeHexForPdf("拠点名")} Tj`);
+      lines.push(`/F1 9 Tf 1 0 0 1 304 741 Tm ${encodeUtf16BeHexForPdf(slipMeta.baseName)} Tj`);
+      lines.push(`/F1 7 Tf 1 0 0 1 34 725 Tm ${encodeUtf16BeHexForPdf("株式会社タカミヤ担当者")} Tj`);
+      lines.push(`/F1 9 Tf 1 0 0 1 34 713 Tm ${encodeUtf16BeHexForPdf(slipMeta.staffName)} Tj`);
+      lines.push(`/F1 7 Tf 1 0 0 1 304 725 Tm ${encodeUtf16BeHexForPdf("スクラップ引取業者")} Tj`);
+      lines.push(`/F1 9 Tf 1 0 0 1 304 713 Tm ${encodeUtf16BeHexForPdf(slipMeta.vendorName)} Tj`);
+      lines.push("ET");
+
+      const tableTopY = 700;
+      const rowH = 19.5;
+      if (!hasCanvasLayer) {
+        lines.push("0.94 0.94 0.94 rg 28 680 539 20 re B");
+      }
+      lines.push("BT");
+      lines.push(textRenderMode);
+      lines.push(`/F1 8 Tf 1 0 0 1 38 687 Tm ${encodeUtf16BeHexForPdf("No.")} Tj`);
+      lines.push(`/F1 8 Tf 1 0 0 1 82 687 Tm ${encodeUtf16BeHexForPdf("区分")} Tj`);
+      lines.push(`/F1 8 Tf 1 0 0 1 250 687 Tm ${encodeUtf16BeHexForPdf("品名 / 規格")} Tj`);
+      lines.push(`/F1 8 Tf 1 0 0 1 505 687 Tm ${encodeUtf16BeHexForPdf("数量")} Tj`);
+      lines.push("ET");
+
+      // Items Rows (up to 25 rows per page)
+      const items = pageInfo.items || [];
+      if (items.length === 0) {
+        if (!hasCanvasLayer) {
+          lines.push("0.75 0.75 0.75 RG 28 660 539 20 re S");
+        }
+        lines.push("BT");
+        lines.push(textRenderMode);
+        lines.push(`/F1 8 Tf 1 0 0 1 255 667 Tm ${encodeUtf16BeHexForPdf("明細品目なし")} Tj`);
+        lines.push("ET");
+      } else {
+        for (let r = 0; r < items.length; r++) {
+          const it = items[r];
+          const rowBottomY = (tableTopY - 20) - ((r + 1) * rowH);
+          const textY = rowBottomY + 5.5;
+          if (!hasCanvasLayer) {
+            lines.push(`0.75 0.75 0.75 RG 0.5 w 28 ${rowBottomY.toFixed(2)} 539 ${rowH.toFixed(2)} re S`);
+          }
+          lines.push("BT");
+          lines.push(textRenderMode);
+          lines.push(`/F2 8 Tf 1 0 0 1 40 ${textY.toFixed(2)} Tm (${escapePdfLiteralString(String(it.lineNo))}) Tj`);
+          lines.push(`/F1 8 Tf 1 0 0 1 80 ${textY.toFixed(2)} Tm ${encodeUtf16BeHexForPdf(it.category)} Tj`);
+          lines.push(`/F1 8 Tf 1 0 0 1 150 ${textY.toFixed(2)} Tm ${encodeUtf16BeHexForPdf(it.name)} Tj`);
+          lines.push(`/F1 8 Tf 1 0 0 1 475 ${textY.toFixed(2)} Tm ${encodeUtf16BeHexForPdf(it.quantity)} Tj`);
+          lines.push("ET");
+          lines.push(`% ROW_${it.lineNo}_CAT(${escapePdfLiteralString(it.category)})_NAME(${escapePdfLiteralString(it.name)})_QTY(${escapePdfLiteralString(it.quantity)})`);
+        }
+      }
+
+      // Final page of THIS slip only: Receipt Signature Block (各伝票の最終ページに受領署名欄 & 電子署名画像)
+      if (isLastPage) {
+        if (!hasCanvasLayer) {
+          lines.push("0.25 0.25 0.25 RG 0.8 w 330 28 237 124 re S");
+        }
+        lines.push("BT");
+        lines.push(textRenderMode);
+        lines.push(`/F1 8 Tf 1 0 0 1 340 138 Tm ${encodeUtf16BeHexForPdf("【業者様受領署名】")} Tj`);
+        lines.push(`/F1 6.5 Tf 1 0 0 1 440 35 Tm ${encodeUtf16BeHexForPdf("上記資材を受領いたしました")} Tj`);
+        lines.push("ET");
+        lines.push("% FINAL_PAGE_SIGNATURE_BOX_PRESENT");
+
+        if (sigXObjectId !== null && sigMeta && sigMeta.hasDigitalSignature) {
+          if (!hasCanvasLayer) {
+            lines.push("q 190 0 0 72 350 52 cm /ImSig Do Q");
+          }
+          lines.push(`% DIGITAL_SIGNATURE_IMAGE_EMBEDDED(${escapePdfLiteralString(String(sigMeta.signatureData).slice(0, 64))})`);
+        } else {
+          lines.push("% DIGITAL_SIGNATURE_NONE_BLANK_BOX");
+        }
+      }
+
+      lines.push(`% SLIP_META(${escapePdfLiteralString(slipMeta.slipNo)}|${escapePdfLiteralString(slipMeta.formattedDate)}|${escapePdfLiteralString(slipMeta.baseCode)}|${escapePdfLiteralString(slipMeta.baseName)}|${escapePdfLiteralString(slipMeta.staffName)}|${escapePdfLiteralString(slipMeta.vendorName)}|PAGE_${pNum}_OF_${totalPages})`);
+      lines.push("Q");
+
+      const streamContent = lines.join("\n");
+      const streamBytesLen = (typeof Buffer !== "undefined")
+        ? Buffer.byteLength(streamContent, "utf8")
+        : new TextEncoder().encode(streamContent).byteLength;
+
+      const contentObjId = addObject(
+        `<< /Length ${streamBytesLen} >>\nstream\n${streamContent}\nendstream`
+      );
+
+      const xObjParts = [];
+      if (pageCanvasImgObjId !== null) {
+        xObjParts.push(`/ImPage ${pageCanvasImgObjId} 0 R`);
+      }
+      if (isLastPage && sigXObjectId !== null) {
+        xObjParts.push(`/ImSig ${sigXObjectId} 0 R`);
+      }
+      const xObjDict = xObjParts.length > 0
+        ? ` /XObject << ${xObjParts.join(" ")} >>`
+        : "";
+
+      const pageObjId = addObject(
+        `<< /Type /Page /Parent ${pagesId} 0 R /MediaBox [0 0 ${PAGE_W} ${PAGE_H}] ` +
+        `/Resources << /Font << /F1 ${fontJaId} 0 R /F2 ${fontAsciiId} 0 R >>${xObjDict} >> ` +
+        `/Contents ${contentObjId} 0 R >>`
+      );
+      pageObjectIds.push(pageObjId);
+    }
+  }
+
+  const combinedTotalPages = pageObjectIds.length;
+  objects[catalogId - 1].body = `<< /Type /Catalog /Pages ${pagesId} 0 R >>`;
+  objects[pagesId - 1].body = `<< /Type /Pages /Kids [${pageObjectIds.map(id => `${id} 0 R`).join(" ")}] /Count ${combinedTotalPages} >>`;
+
+  // Assemble PDF 1.4 with accurate byte offsets in xref table (supporting binary streams)
+  const chunks = [];
+  let byteOffset = 0;
+  const encodeUtf8 = (str) => {
+    if (typeof Buffer !== "undefined") {
+      return new Uint8Array(Buffer.from(str, "utf8"));
+    }
+    return new TextEncoder().encode(str);
+  };
+  const pushBytes = (arr) => {
+    chunks.push(arr);
+    byteOffset += arr.byteLength;
+  };
+  const pushStr = (str) => {
+    pushBytes(encodeUtf8(str));
+  };
+
+  // PDF binary header (%PDF-1.4 + 4 high-bit bytes)
+  pushBytes(new Uint8Array([
+    0x25, 0x50, 0x44, 0x46, 0x2d, 0x31, 0x2e, 0x34, 0x0a,
+    0x25, 0xe2, 0xe3, 0xcf, 0xd3, 0x0a
+  ]));
+
+  const offsets = [0];
+  for (let i = 0; i < objects.length; i++) {
+    offsets.push(byteOffset);
+    const obj = objects[i];
+    if (obj.streamBytes) {
+      pushStr(`${obj.id} 0 obj\n${obj.dictStr}\nstream\n`);
+      pushBytes(obj.streamBytes);
+      pushStr("\nendstream\nendobj\n");
+    } else {
+      pushStr(`${obj.id} 0 obj\n${obj.body}\nendobj\n`);
+    }
+  }
+
+  const xrefStart = byteOffset;
+  pushStr(`xref\n0 ${objects.length + 1}\n`);
+  pushStr("0000000000 65535 f \n");
+  for (let i = 1; i <= objects.length; i++) {
+    const offStr = String(offsets[i]).padStart(10, "0");
+    pushStr(`${offStr} 00000 n \n`);
+  }
+
+  pushStr(
+    `trailer\n<< /Size ${objects.length + 1} /Root ${catalogId} 0 R >>\n` +
+    `startxref\n${xrefStart}\n%%EOF\n`
+  );
+
+  const totalBytes = new Uint8Array(byteOffset);
+  let pos = 0;
+  for (const chunk of chunks) {
+    totalBytes.set(chunk, pos);
+    pos += chunk.byteLength;
+  }
+  return totalBytes;
+}
+
+function buildMultiPageA4SlipPdfBytes(slipMeta, pagesData, sigMeta) {
+  return buildCombinedMultiSlipA4PdfBytes([{ slipMeta, pagesData, sigMeta }]);
+}
+
+function buildSlipOutputPagesDescriptor(slipRecord) {
+  const slipNo = String(slipRecord.slipNo || slipRecord.slipId || "").trim();
+  const rawDate = (typeof getHistoryBusinessDate === "function" ? getHistoryBusinessDate(slipRecord) : "") || slipRecord.date || slipRecord.createdAt || "";
+  const canonical = (typeof toCanonicalBusinessDate === "function" ? toCanonicalBusinessDate(rawDate) : rawDate) || "";
+  const formattedDate = canonical ? canonical.replace(/-/g, "/") : (rawDate || "");
+  const baseCode = String(slipRecord.baseCode || workingBaseCode || resolvedBaseCode || "").trim();
+  const baseName = String(slipRecord.baseName || resolvedBaseName || workingBaseName || "").trim();
+  const staffName = String(slipRecord.staffName || resolvedEmployeeName || "").trim();
+  const vendorName = String(slipRecord.vendorName || "").trim();
+
+  // 1. 全品目を「資材」「定型」「その他」に区分統一
+  const allItems = collectUnifiedSlipItemsForOutput(slipRecord);
+
+  // 2. 25行単位の改ページ
+  const PAGE_SIZE = 25;
+  const totalPages = Math.max(1, Math.ceil(allItems.length / PAGE_SIZE));
+
+  const sigData = slipRecord.vendorSignatureImage || slipRecord.signatureData || null;
+  const hasDigitalSig = Boolean((slipRecord.signatureStatus === "DIGITAL" || slipRecord.signStatus === "DIGITAL") && sigData);
+
+  const pagesData = [];
+  for (let p = 1; p <= totalPages; p++) {
+    const pageStartIndex = (p - 1) * PAGE_SIZE;
+    const rawPageItems = allItems.slice(pageStartIndex, pageStartIndex + PAGE_SIZE);
+    const isLastPage = (p === totalPages);
+    const itemsWithLineNo = rawPageItems.map((it, idx) => ({
+      lineNo: pageStartIndex + idx + 1,
+      category: it.category,
+      name: it.name,
+      quantity: it.quantity
+    }));
+
+    pagesData.push({
+      pageNumber: p,
+      totalPages,
+      rowCount: itemsWithLineNo.length,
+      items: itemsWithLineNo,
+      hasSignatureBlock: isLastPage,
+      hasDigitalSignature: isLastPage && hasDigitalSig
+    });
+  }
+
+  const slipMeta = {
+    slipNo,
+    canonicalDate: canonical,
+    formattedDate,
+    baseCode,
+    baseName,
+    staffName,
+    vendorName
+  };
+
+  const sigMetaObj = {
+    hasDigitalSignature: hasDigitalSig,
+    signatureData: sigData
+  };
+
+  return {
+    slipNo,
+    allItems,
+    totalPages,
+    hasDigitalSig,
+    pagesData,
+    slipMeta,
+    sigMetaObj
+  };
+}
+
+async function generateSlipPdfPackage(slipRecord) {
+  if (!slipRecord) {
+    return { success: false, error: "MISSING_SLIP_RECORD" };
+  }
+  if (slipRecord.status === "DELETED") {
+    return { success: false, error: "SLIP_DELETED" };
+  }
+  if (slipRecord.status && slipRecord.status !== "FINAL") {
+    return { success: false, error: "SLIP_NOT_FINAL" };
+  }
+
+  const slipNo = String(slipRecord.slipNo || slipRecord.slipId || "").trim();
+  if (!slipNo) {
+    return { success: false, error: "MISSING_SLIP_NO" };
+  }
+
+  // 電子署名済み伝票で署名データが未取得の場合はオンデマンド取得 (Decision C 準拠)
+  const sigCheck = await ensureSlipSignatureForOutput(slipRecord);
+  if (!sigCheck.success) {
+    return {
+      success: false,
+      error: sigCheck.error || "SIGNATURE_FETCH_FAILED",
+      message: "電子署名画像の取得に失敗したため、PDFを生成できませんでした。"
+    };
+  }
+
+  const desc = buildSlipOutputPagesDescriptor(slipRecord);
+
+  let canvasRendered = false;
+  try {
+    canvasRendered = await renderSlipPagesViaCanvas(desc.slipMeta, desc.pagesData, desc.sigMetaObj);
+  } catch (e) {
+    canvasRendered = false;
+  }
+
+  const pdfBytes = buildMultiPageA4SlipPdfBytes(desc.slipMeta, desc.pagesData, desc.sigMetaObj);
+  const pdfBase64 = uint8ArrayToBase64(pdfBytes);
+  const filename = getPdfFilenameForSlip(slipNo);
+  const pdfBlob = (typeof Blob !== "undefined")
+    ? new Blob([pdfBytes], { type: "application/pdf" })
+    : null;
+  let pdfFile = null;
+  if (typeof File === "function") {
+    try {
+      pdfFile = new File([pdfBytes], filename, { type: "application/pdf" });
+    } catch (e) {
+      pdfFile = null;
+    }
+  }
+
+  return {
+    success: true,
+    slipNo,
+    filename,
+    mimeType: "application/pdf",
+    orientation: "PORTRAIT",
+    paperSize: "A4",
+    widthPt: 595.28,
+    heightPt: 841.89,
+    pageCount: desc.totalPages,
+    totalItems: desc.allItems.length,
+    hasDigitalSignature: desc.hasDigitalSig,
+    signatureEmbedded: desc.hasDigitalSig,
+    canvasRendered,
+    byteLength: pdfBytes.byteLength,
+    pdfBytes,
+    pdfBase64,
+    pdfBlob,
+    pdfFile,
+    pages: desc.pagesData,
+    slipMeta: desc.slipMeta
+  };
+}
+
+// Phase 1: STEP 1 — PDF準備（Fileオブジェクトを保持してユーザー操作からの即時共有を可能にする）
+async function prepareSlipPdfForShare(slipRecord) {
+  const pkg = await generateSlipPdfPackage(slipRecord);
+  if (pkg && pkg.success && pkg.pdfBytes) {
+    if (!pkg.pdfFile && typeof File === "function") {
+      try {
+        pkg.pdfFile = new File([pkg.pdfBytes], pkg.filename, { type: "application/pdf" });
+      } catch (e) {
+        pkg.pdfFile = null;
+      }
+    }
+    currentGeneratedPdfPackage = pkg;
+  }
+  return pkg;
+}
+
+function showEmailComposeStatus(message, type = "info") {
+  const banner = document.getElementById("email-compose-status");
+  if (!banner) return;
+  if (!message) {
+    banner.style.display = "none";
+    banner.textContent = "";
+    banner.className = "email-status-banner";
+    return;
+  }
+  banner.textContent = message;
+  banner.className = `email-status-banner status-${type}`;
+  banner.style.display = "block";
+}
+
+async function ensureComposePdfPackageReady(slipRecord = null) {
+  const slip = slipRecord || currentEmailComposeSlip;
+  if (!slip) {
+    return { success: false, error: "MISSING_SLIP" };
+  }
+  const slipNo = String(slip.slipNo || slip.slipId || "").trim();
+  if (
+    currentGeneratedPdfPackage &&
+    currentGeneratedPdfPackage.success &&
+    currentGeneratedPdfPackage.slipNo === slipNo &&
+    currentGeneratedPdfPackage.pdfBytes
+  ) {
+    return currentGeneratedPdfPackage;
+  }
+  const pkg = await prepareSlipPdfForShare(slip);
+  return pkg;
+}
+
+function triggerBrowserPdfDownload(pdfBytes, filename) {
+  if (!pdfBytes || !filename) return false;
+  lastDownloadedPdfInfo = {
+    filename,
+    byteLength: pdfBytes.byteLength || 0,
+    timestamp: new Date().toISOString()
+  };
+  try {
+    if (typeof Blob !== "undefined" && typeof URL !== "undefined" && typeof URL.createObjectURL === "function" && typeof document !== "undefined") {
+      const blob = new Blob([pdfBytes], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      if (document.body && typeof document.body.appendChild === "function") {
+        document.body.appendChild(a);
+      }
+      if (typeof a.click === "function") {
+        a.click();
+      }
+      if (document.body && typeof document.body.removeChild === "function") {
+        try { document.body.removeChild(a); } catch (e) {}
+      }
+      setTimeout(() => {
+        try { URL.revokeObjectURL(url); } catch (e) {}
+      }, 2000);
+      return true;
+    }
+  } catch (err) {
+    console.error("[app.js] triggerBrowserPdfDownload error:", err);
+  }
+  return true;
+}
+
+function handleDownloadSlipPdfClick(button = null) {
+  return executeDownloadSlipPdf({ button });
+}
+
+async function executeDownloadSlipPdf(options = {}) {
+  const slip = options.slip || currentEmailComposeSlip;
+  if (!slip) {
+    showEmailComposeStatus("伝票PDFを保存できませんでした（対象伝票が選択されていません）。", "error");
+    return { success: false, error: "MISSING_SLIP" };
+  }
+  if (slip.status === "DELETED") {
+    showEmailComposeStatus("削除済みの伝票はPDF保存できません。", "error");
+    return { success: false, error: "SLIP_DELETED" };
+  }
+  if (slip.status !== "FINAL") {
+    showEmailComposeStatus("確定済み（FINAL）の伝票のみPDF保存できます。", "error");
+    return { success: false, error: "SLIP_NOT_FINAL" };
+  }
+
+  const pkg = await ensureComposePdfPackageReady(slip);
+  if (!pkg || !pkg.success || !pkg.pdfBytes) {
+    const errMsg = (pkg && pkg.message) ? pkg.message : "PDFの生成に失敗しました。";
+    showEmailComposeStatus(`伝票PDFを保存できませんでした（${errMsg}）`, "error");
+    return { success: false, error: (pkg && pkg.error) || "PDF_GENERATION_FAILED" };
+  }
+
+  triggerBrowserPdfDownload(pkg.pdfBytes, pkg.filename);
+  if (!options.silentStatus) {
+    showEmailComposeStatus(
+      `伝票PDF「${pkg.filename}」（${pkg.pageCount}ページ）を保存しました。メールソフトへ手動で添付してご利用いただけます。`,
+      "info"
+    );
+  }
+
+  return {
+    success: true,
+    mode: "PDF_DOWNLOAD",
+    emailSent: false,
+    slipNo: pkg.slipNo,
+    filename: pkg.filename,
+    pageCount: pkg.pageCount,
+    byteLength: pkg.byteLength
+  };
+}
+
+function getActiveNavigator(navOverride = null) {
+  if (navOverride) return navOverride;
+  if (typeof window !== "undefined" && window.navigator) return window.navigator;
+  if (typeof navigator !== "undefined") return navigator;
+  return null;
+}
+
+function canShareSlipPdfFiles(pdfFile = null, navOverride = null) {
+  try {
+    const nav = getActiveNavigator(navOverride);
+    if (!nav || typeof nav.canShare !== "function" || typeof nav.share !== "function") {
+      return false;
+    }
+    let testFile = pdfFile;
+    if (!testFile && typeof File === "function") {
+      testFile = new File([new Uint8Array([0x25, 0x50, 0x44, 0x46])], "test.pdf", { type: "application/pdf" });
+    }
+    if (!testFile) return false;
+    return Boolean(nav.canShare({ files: [testFile] }));
+  } catch (e) {
+    return false;
+  }
+}
+
+function handleShareSlipPdfClick(button = null) {
+  return executeShareSlipPdfFlow({ button });
+}
+
+async function executeShareSlipPdfFlow(options = {}) {
+  const slip = options.slip || currentEmailComposeSlip;
+  if (!slip) {
+    showEmailComposeStatus("PDFを共有できませんでした（対象伝票が選択されていません）。", "error");
+    return { success: false, error: "MISSING_SLIP" };
+  }
+  if (slip.status === "DELETED") {
+    showEmailComposeStatus("削除済みの伝票は共有できません。", "error");
+    return { success: false, error: "SLIP_DELETED" };
+  }
+  if (slip.status !== "FINAL") {
+    showEmailComposeStatus("確定済み（FINAL）の伝票のみ共有できます。", "error");
+    return { success: false, error: "SLIP_NOT_FINAL" };
+  }
+
+  const slipBaseCode = String(slip.baseCode || workingBaseCode || resolvedBaseCode || "").trim();
+  if (!isSlipEmailEnabledForBase(slipBaseCode)) {
+    showEmailComposeStatus("この拠点ではメール機能は無効です。", "error");
+    return { success: false, error: "EMAIL_NOT_ENABLED_FOR_BASE" };
+  }
+
+  // Phase 1 STEP 2: 準備完了済みパッケージがあれば await なしで即座に取得し、iOS Safariのユーザー操作有効状態(Transient User Activation)を維持する
+  const targetSlipNo = String(slip.slipNo || slip.slipId || "").trim();
+  let pkg = null;
+  if (options.preparedPackage && options.preparedPackage.success && options.preparedPackage.pdfBytes) {
+    pkg = options.preparedPackage;
+  } else if (
+    currentGeneratedPdfPackage &&
+    currentGeneratedPdfPackage.success &&
+    currentGeneratedPdfPackage.slipNo === targetSlipNo &&
+    currentGeneratedPdfPackage.pdfBytes
+  ) {
+    pkg = currentGeneratedPdfPackage;
+  } else {
+    pkg = await ensureComposePdfPackageReady(slip);
+  }
+
+  if (!pkg || !pkg.success || !pkg.pdfBytes) {
+    showEmailComposeStatus("共有用PDFの生成に失敗しました。", "error");
+    return { success: false, error: (pkg && pkg.error) || "PDF_GENERATION_FAILED" };
+  }
+
+  const subjectInput = document.getElementById("email-compose-subject");
+  const bodyInput = document.getElementById("email-compose-body");
+  const subject = (options.subject !== undefined)
+    ? String(options.subject).trim()
+    : (subjectInput ? String(subjectInput.value || "").trim() : buildDefaultEmailSubject(pkg.slipNo));
+  const body = (options.body !== undefined)
+    ? String(options.body).trim()
+    : (bodyInput ? String(bodyInput.value || "").trim() : buildDefaultEmailBody(slip));
+
+  const nav = getActiveNavigator(options.navigatorOverride);
+  let pdfFile = pkg.pdfFile || null;
+  if (!pdfFile && typeof File === "function") {
+    try {
+      pdfFile = new File([pkg.pdfBytes], pkg.filename, { type: "application/pdf" });
+      pkg.pdfFile = pdfFile;
+    } catch (e) {
+      pdfFile = null;
+    }
+  }
+
+  if (pdfFile && nav && canShareSlipPdfFiles(pdfFile, nav)) {
+    try {
+      await nav.share({
+        files: [pdfFile],
+        title: subject,
+        text: body
+      });
+      // Phase 1 / Phase 5 iPhone: 共有シートが開いただけでメール送信成功と判定しない
+      showEmailComposeStatus(
+        `OSの共有シートを開きました。選択したメールアプリでPDFが添付されていることを確認し、送信を完了してください。（共有シートの起動だけではメール送信完了とは判定されません）`,
+        "warning"
+      );
+      return {
+        success: true,
+        mode: "WEB_SHARE_FILES",
+        emailSent: false,
+        shared: true,
+        slipNo: pkg.slipNo,
+        filename: pkg.filename,
+        pdfFile
+      };
+    } catch (err) {
+      if (err && err.name === "AbortError") {
+        showEmailComposeStatus("共有シートをキャンセルしました。（メールは送信されていません）", "info");
+        return {
+          success: false,
+          cancelled: true,
+          mode: "WEB_SHARE_CANCELLED",
+          emailSent: false,
+          error: "SHARE_CANCELLED"
+        };
+      }
+      // 共有エラー時はPDF保存方式へフォールバック
+    }
+  }
+
+  // 未対応環境ではPDF保存方式へ切り替える
+  triggerBrowserPdfDownload(pkg.pdfBytes, pkg.filename);
+  showEmailComposeStatus(
+    `この環境はPDFファイルの直接共有（navigator.canShare）に未対応のため、PDF保存方式へ切り替えました。「${pkg.filename}」を保存しましたので、メールアプリへ手動で添付して送信してください。（まだメール送信は完了していません）`,
+    "warning"
+  );
+  return {
+    success: true,
+    mode: "FALLBACK_PDF_DOWNLOAD",
+    emailSent: false,
+    shared: false,
+    slipNo: pkg.slipNo,
+    filename: pkg.filename
+  };
+}
+
+    window.SCRAP_APP_RUNTIME_REV = SCRAP_APP_RUNTIME_REV;
+    window.prepareSlipPdfForShare = prepareSlipPdfForShare;
+    window.generateSlipPdfPackage = generateSlipPdfPackage;
+    window.executeShareSlipPdfFlow = executeShareSlipPdfFlow;
+    window.canShareSlipPdfFiles = canShareSlipPdfFiles;
+    window.executeDownloadSlipPdf = executeDownloadSlipPdf;
+    window.buildDefaultEmailSubject = buildDefaultEmailSubject;
+    window.buildDefaultEmailBody = buildDefaultEmailBody;
+
+
+    // 個人情報を含まないダミー署名PNG生成
+    function createDummySignatureDataUrl() {
+      const c = document.createElement("canvas");
+      c.width = 360;
+      c.height = 120;
+      const ctx = c.getContext("2d");
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, c.width, c.height);
+      ctx.strokeStyle = "#1f1235";
+      ctx.lineWidth = 3.5;
+      ctx.lineCap = "round";
+      ctx.beginPath();
+      ctx.moveTo(30, 80);
+      ctx.bezierCurveTo(95, 25, 160, 105, 235, 45);
+      ctx.bezierCurveTo(270, 30, 300, 85, 330, 55);
+      ctx.stroke();
+      ctx.fillStyle = "#1f1235";
+      ctx.font = "bold 20px sans-serif";
+      ctx.fillText("DUMMY受領サイン", 95, 105);
+      return c.toDataURL("image/png");
+    }
+
+    function buildDummySlipByType(patternKey) {
+      const sigUrl = createDummySignatureDataUrl();
+      const makeRows = (n) => {
+        const list = [];
+        for (let i = 1; i <= n; i++) {
+          list.push({
+            itemCode: "DMY-" + String(i).padStart(3, "0"),
+            itemName: i % 4 === 0 ? "次世代Iq支柱3800高耐久溶融亜鉛メッキ仕様" : ("ダミー検証資材品目_" + i),
+            quantityInput: i % 5 === 0 ? "一式" : String(i * 2),
+            quantityType: i % 5 === 0 ? "SET" : "NUMBER",
+            quantityValue: i % 5 === 0 ? null : (i * 2)
+          });
+        }
+        return list;
+      };
+
+      if (patternKey === "DUMMY_2P_SIGNED") {
+        return {
+          slipNo: "SCRAP-TEST-0002",
+          slipId: "SCRAP-TEST-0002",
+          status: "FINAL",
+          date: "2026-11-06",
+          baseCode: "LW",
+          baseName: "Lab.West（テスト拠点）",
+          staffName: "テスト担当者（ダミー）",
+          vendorName: "テスト引取業者株式会社（ダミー）",
+          signatureStatus: "DIGITAL",
+          vendorSignatureImage: sigUrl,
+          codeItems: makeRows(25),
+          fixedItems: [{ fixedItemId: "FX01", itemName: "鉄クズ（定型ダミー）", quantityInput: "2", quantityType: "NUMBER", quantityValue: 2 }],
+          otherItems: [{ itemName: "雑線類（その他ダミー）", quantityInput: "1カゴ" }]
+        };
+      }
+
+      if (patternKey === "DUMMY_1P_UNSIGNED") {
+        return {
+          slipNo: "SCRAP-TEST-0003",
+          slipId: "SCRAP-TEST-0003",
+          status: "FINAL",
+          date: "2026-11-06",
+          baseCode: "LW",
+          baseName: "Lab.West（テスト拠点）",
+          staffName: "テスト担当者（ダミー）",
+          vendorName: "テスト引取業者株式会社（ダミー）",
+          signatureStatus: "NONE",
+          vendorSignatureImage: null,
+          codeItems: makeRows(15),
+          fixedItems: [],
+          otherItems: []
+        };
+      }
+
+      return {
+        slipNo: "SCRAP-TEST-0001",
+        slipId: "SCRAP-TEST-0001",
+        status: "FINAL",
+        date: "2026-11-06",
+        baseCode: "LW",
+        baseName: "Lab.West（テスト拠点）",
+        staffName: "テスト担当者（ダミー）",
+        vendorName: "テスト引取業者株式会社（ダミー）",
+        signatureStatus: "DIGITAL",
+        vendorSignatureImage: sigUrl,
+        codeItems: makeRows(20),
+        fixedItems: [{ fixedItemId: "FX01", itemName: "鉄クズ（定型ダミー）", quantityInput: "3", quantityType: "NUMBER", quantityValue: 3 }],
+        otherItems: [{ itemName: "アルミ端材（ダミー）", quantityInput: "1カゴ" }]
+      };
+    }
+
+    let preparedTestSlip = null;
+    let preparedTestPkg = null;
+
+    function updateEnvironmentDiag() {
+      const hasShare = Boolean(navigator && typeof navigator.share === "function");
+      const canSharePdf = (typeof window.canShareSlipPdfFiles === "function")
+        ? window.canShareSlipPdfFiles(preparedTestPkg ? preparedTestPkg.pdfFile : null)
+        : false;
+
+      const shareEl = document.getElementById("diag-nav-share");
+      const canShareEl = document.getElementById("diag-can-share-files");
+      if (shareEl) {
+        shareEl.innerHTML = hasShare
+          ? '<span class="status-pill pill-pass">対応 (function)</span>'
+          : '<span class="status-pill pill-warn">非対応 (PCまたは非HTTPS)</span>';
+      }
+      if (canShareEl) {
+        canShareEl.innerHTML = canSharePdf
+          ? '<span class="status-pill pill-pass">対応 (canShare=true)</span>'
+          : '<span class="status-pill pill-warn">非対応 (canShare=false)</span>';
+      }
+    }
+
+    // STEP 1: PDF準備（generateSlipPdfPackage / prepareSlipPdfForShare を再利用）
+    async function runStep1PreparePdf() {
+      const btn1 = document.getElementById("btn-step1-prepare");
+      const btn2 = document.getElementById("btn-step2-share");
+      const btnDl = document.getElementById("btn-step2-download");
+      const status1 = document.getElementById("step1-status");
+      const diagFile = document.getElementById("diag-prepared-file");
+      const stage0 = document.getElementById("stage-0-pdf-prepared");
+      const sel = document.getElementById("dummy-slip-select");
+      const pattern = sel ? sel.value : "DUMMY_1P_SIGNED";
+
+      btn1.disabled = true;
+      btn1.textContent = "PDF生成中...";
+      btn2.disabled = true;
+      btnDl.disabled = true;
+      status1.textContent = "ダミー伝票のPDFとFileオブジェクトを準備しています...";
+
+      try {
+        preparedTestSlip = buildDummySlipByType(pattern);
+        preparedTestPkg = await window.prepareSlipPdfForShare(preparedTestSlip);
+
+        if (preparedTestPkg && preparedTestPkg.success && preparedTestPkg.pdfBytes) {
+          const kb = Math.max(1, Math.round(preparedTestPkg.byteLength / 1024));
+          const hasFileObj = Boolean(preparedTestPkg.pdfFile && preparedTestPkg.pdfFile.type === "application/pdf");
+          diagFile.innerHTML = `<span class="status-pill pill-pass">${preparedTestPkg.filename} (${preparedTestPkg.pageCount}P / ${kb}KB / File=${hasFileObj})</span>`;
+          status1.innerHTML = `<strong style="color:#166534;">✓ STEP 1 完了：</strong> <code>${preparedTestPkg.filename}</code>（MIME: <code>${preparedTestPkg.mimeType}</code>, ${preparedTestPkg.pageCount}ページ, 約${kb}KB）をメモリに保持しました。下の「PDFを共有」をタップしてください。`;
+          if (stage0) {
+            stage0.className = "status-pill pill-pass";
+            stage0.textContent = `READY (${preparedTestPkg.pageCount}P / ${kb}KB)`;
+          }
+          btn2.disabled = false;
+          btn2.textContent = "PDFを共有";
+          btnDl.disabled = false;
+        } else {
+          diagFile.innerHTML = '<span class="status-pill pill-warn">生成失敗</span>';
+          status1.textContent = "PDFの準備に失敗しました: " + ((preparedTestPkg && preparedTestPkg.error) || "UNKNOWN");
+        }
+      } catch (err) {
+        status1.textContent = "エラー: " + (err && err.message ? err.message : String(err));
+      } finally {
+        btn1.disabled = false;
+        btn1.textContent = "STEP 1：PDFを生成・準備する";
+        updateEnvironmentDiag();
+      }
+    }
+
+    // STEP 2: PDF共有（ユーザーの直接クリックから executeShareSlipPdfFlow を呼び出す）
+    async function runStep2SharePdf() {
+      if (!preparedTestSlip || !preparedTestPkg) {
+        alert("先に STEP 1「PDFを生成・準備する」を実行してください。");
+        return;
+      }
+      const res = await window.executeShareSlipPdfFlow({
+        slip: preparedTestSlip,
+        preparedPackage: preparedTestPkg,
+        subject: window.buildDefaultEmailSubject(preparedTestSlip.slipNo),
+        body: window.buildDefaultEmailBody(preparedTestSlip)
+      });
+      const stage1 = document.getElementById("stage-1-share-sheet");
+      if (res && res.mode === "WEB_SHARE_FILES" && res.shared) {
+        if (stage1) {
+          stage1.className = "status-pill pill-pass";
+          stage1.textContent = "SHARE_INVOKED (実機でシート表示を確認)";
+        }
+      } else if (res && res.mode === "FALLBACK_PDF_DOWNLOAD") {
+        if (stage1) {
+          stage1.className = "status-pill pill-warn";
+          stage1.textContent = "FALLBACK_DOWNLOAD (非対応環境)";
+        }
+      }
+    }
+
+    async function runFallbackDownloadPdf() {
+      if (!preparedTestSlip || !preparedTestPkg) return;
+      await window.executeDownloadSlipPdf({ slip: preparedTestSlip });
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      updateEnvironmentDiag();
+    });
+  </script>
+</body>
+</html>
