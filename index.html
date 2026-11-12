@@ -313,29 +313,54 @@ function getPdfFilenameForSlip(slipNo) {
   return `スクラップ処分伝票_${cleanSlipNo}.pdf`;
 }
 
-function buildDefaultEmailSubject(slipNo) {
-  const cleanSlipNo = String(slipNo || "").trim();
-  return `【スクラップ処分伝票】${cleanSlipNo}`;
+function buildDefaultEmailSubject() {
+  return "スクラップ伝票";
 }
 
 function buildDefaultEmailBody(slipRecord) {
   const s = slipRecord || {};
   const slipNo = String(s.slipNo || s.slipId || "").trim();
-  const rawDate = (typeof getHistoryBusinessDate === "function" ? getHistoryBusinessDate(s) : "") || s.date || s.createdAt || "";
-  const canonical = (typeof toCanonicalBusinessDate === "function" ? toCanonicalBusinessDate(rawDate) : rawDate) || "";
-  const disposalDate = canonical ? canonical.replace(/-/g, "/") : (rawDate || "");
-  const baseLabel = String(s.baseName || s.baseCode || "").trim();
+  const rawDate = (typeof getHistoryBusinessDate === "function" ? getHistoryBusinessDate(s) : "") || s.date || s.finalizedAt || s.createdAt || "";
+  let canonical = (typeof toCanonicalBusinessDate === "function" ? toCanonicalBusinessDate(rawDate) : "") || "";
+  if (!canonical && rawDate) {
+    const dateMatch = String(rawDate).trim().match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+    canonical = dateMatch
+      ? `${dateMatch[1]}-${dateMatch[2].padStart(2, "0")}-${dateMatch[3].padStart(2, "0")}`
+      : String(rawDate).trim();
+  }
+  const disposalDate = canonical ? canonical.replace(/-/g, "/") : "";
+
+  let baseName = String(s.baseName || "").trim();
+  if (!baseName) {
+    const bCode = String(s.baseCode || "").trim();
+    if (bCode && typeof window !== "undefined" && Array.isArray(window.ACTIVE_BASES)) {
+      const matchedBase = window.ACTIVE_BASES.find(b => b && String(b.baseCode || "").trim() === bCode);
+      if (matchedBase && matchedBase.baseName) {
+        baseName = String(matchedBase.baseName).trim();
+      }
+    }
+    if (!baseName && bCode && typeof workingBaseCode !== "undefined" && bCode === String(workingBaseCode || "").trim() && typeof workingBaseName !== "undefined" && workingBaseName) {
+      baseName = String(workingBaseName).trim();
+    }
+    if (!baseName && bCode && typeof resolvedBaseCode !== "undefined" && bCode === String(resolvedBaseCode || "").trim() && typeof resolvedBaseName !== "undefined" && resolvedBaseName) {
+      baseName = String(resolvedBaseName).trim();
+    }
+    if (!baseName && bCode) {
+      baseName = bCode;
+    }
+  }
+
   const vendorName = String(s.vendorName || "").trim();
 
   return [
-    "お疲れさまです。",
+    "ご苦労様です。",
     "",
     "スクラップ処分伝票を送付します。",
     "添付PDFをご確認ください。",
     "",
     `伝票番号：${slipNo}`,
     `処分日：${disposalDate}`,
-    `Base：${baseLabel}`,
+    `Base：${baseName}`,
     `引取業者：${vendorName}`,
     "",
     "よろしくお願いします。"
@@ -1430,14 +1455,15 @@ async function executeShareSlipPdfFlow(options = {}) {
     return { success: false, error: (pkg && pkg.error) || "PDF_GENERATION_FAILED" };
   }
 
-  const subjectInput = document.getElementById("email-compose-subject");
-  const bodyInput = document.getElementById("email-compose-body");
+  const isComposeModalForThisSlip = Boolean(currentEmailComposeSlip && currentEmailComposeSlip === slip);
+  const subjectInput = isComposeModalForThisSlip ? document.getElementById("email-compose-subject") : null;
+  const bodyInput = isComposeModalForThisSlip ? document.getElementById("email-compose-body") : null;
   const subject = (options.subject !== undefined)
     ? String(options.subject).trim()
-    : (subjectInput ? String(subjectInput.value || "").trim() : buildDefaultEmailSubject(pkg.slipNo));
+    : ((subjectInput && String(subjectInput.value || "").trim()) ? String(subjectInput.value).trim() : buildDefaultEmailSubject(pkg.slipNo));
   const body = (options.body !== undefined)
     ? String(options.body).trim()
-    : (bodyInput ? String(bodyInput.value || "").trim() : buildDefaultEmailBody(slip));
+    : ((bodyInput && String(bodyInput.value || "").trim()) ? String(bodyInput.value).trim() : buildDefaultEmailBody(slip));
 
   const nav = getActiveNavigator(options.navigatorOverride);
   let pdfFile = pkg.pdfFile || null;
